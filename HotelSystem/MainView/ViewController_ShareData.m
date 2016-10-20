@@ -11,6 +11,7 @@
 #import "UDP_ShareIP.h"
 #import "UDP_ReceiveIP.h"
 #import "Socket_ShareData.h"
+#import "Socket_ReceiveData.h"
 
 #define ColorText   Color_RGB(255, 255, 255)
 #define FontText    Font(24.0)
@@ -30,6 +31,7 @@ typedef enum : int{
     UDP_ShareIP         *m_udpShareIP;
     UDP_ReceiveIP       *m_udpReceiveIP;
     Socket_ShareData    *m_socketShareData;
+    Socket_ReceiveData  *m_socketReceiveData;
 }
 @synthesize m_delegate;
 @synthesize m_tag;
@@ -59,8 +61,8 @@ typedef enum : int{
 }
 - (void) viewWillDisappear:(BOOL)animated
 {
-    [m_udpShareIP closeShare];
-    [m_socketShareData closeConnect];
+    [self endShareData];
+    [self endReceiveData];
 }
 // ==================================================================================
 #pragma mark - 内部调用方法
@@ -122,7 +124,7 @@ typedef enum : int{
     }
 }
 /** 做分享设备前的IP发送工作 */
-- (void) beginShareIP
+- (void) beginShareData
 {
     if(m_udpShareIP != nil
         && [m_udpShareIP isSharedData] == YES){
@@ -146,27 +148,41 @@ typedef enum : int{
     }
 }
 /** 关闭分享数据 */
-- (void) endShareIP
+- (void) endShareData
 {
     NSLog(@"%@", ShowContentForLog(@"结束分享数据..."));
     if(m_udpShareIP != nil){
         [m_udpShareIP closeShare];
     }
+    if(m_socketShareData != nil){
+        [m_socketShareData closeConnect];
+    }
 }
 /** 开始检测是否有设备正在发送数据 */
-- (void) startReceiveUdp
+- (void) startReceiveData
 {
     if(m_udpReceiveIP == nil
        || [m_udpReceiveIP isReceiveDataNow] != YES){
     
+        if(m_udpReceiveIP == nil){
+            m_udpReceiveIP = [UDP_ReceiveIP new];
+            [m_udpReceiveIP setDelegate:self];
+        }
+        [m_udpReceiveIP startReceive];
+        
     } else {
         [CPublic ShowDialg:@"正在搜索数据..."];
     }
 }
 /** 停止监听UDP */
-- (void) endReceiveUdp
+- (void) endReceiveData
 {
-
+    if(m_udpReceiveIP != nil){
+        [m_udpReceiveIP closeReceive];
+    }
+    if(m_socketReceiveData != nil){
+        [m_socketReceiveData closeReceive];
+    }
 }
 // ==================================================================================
 #pragma mark - 动作触发方法
@@ -176,19 +192,19 @@ typedef enum : int{
     ViewTag viewTag = (ViewTag)(v_btn.tag);
     switch(viewTag){
         case ViewTag_StartReceiveData:{ // 开始接收数据
-            [self startReceiveUdp];
+            [self startReceiveData];
             break;
         }
         case ViewTag_StartSendData:{ // 开始共享数据
-            [self beginShareIP];
+            [self beginShareData];
             break;
         }
         case ViewTag_EndReceiveData:{ // 结束接收数据
-            [self endReceiveUdp];
+            [self endReceiveData];
             break;
         }
         case ViewTag_EndSendData:{ // 结束共享数据
-            [self endShareIP];
+            [self endShareData];
             break;
         }
     }
@@ -198,7 +214,18 @@ typedef enum : int{
 /** 当接收到新数据的时候回调这个接口 */
 - (void) receiveNewData:(NSDictionary*)v_dic
 {
-
+    if(v_dic == nil) { return; }
+    
+    NSString *strAdd = [v_dic objectForKey:Params_ShareIP];
+    NSNumber *num = [v_dic objectForKey:Params_SharePort];
+    if(strAdd == nil) { return; }
+    if(num == nil) { return; }
+    
+    int port = [num intValue];
+    if(m_socketReceiveData == nil){
+        m_socketReceiveData = [Socket_ReceiveData new];
+    }
+    [m_socketReceiveData startReceive:strAdd withPort:port];
 }
 
 @end

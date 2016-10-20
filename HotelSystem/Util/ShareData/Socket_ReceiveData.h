@@ -14,7 +14,7 @@
 // ==============================================================================================
 #pragma mark - 外部调用方法
 /** 开始接收数据的请求 */
-- (void) startReceive;
+- (void) startReceive:(NSString*)v_strAdd withPort:(int)v_port;
 
 /** 关闭接收数据 */
 - (void) closeReceive;

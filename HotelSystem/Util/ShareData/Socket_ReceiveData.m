@@ -13,6 +13,8 @@
 @implementation Socket_ReceiveData
 {
     AsyncSocket     *m_asyncSocket;
+    NSString        *m_strAdd;
+    int             m_port;
 }
 // ==============================================================================================
 #pragma mark - 内部使用方法
@@ -33,16 +35,37 @@
 // ==============================================================================================
 #pragma mark - 外部调用方法
 /** 开始接收数据的请求 */
+- (void) startReceive:(NSString*)v_strAdd withPort:(int)v_port;
+{
+    m_strAdd = v_strAdd;
+    m_port = v_port;
+    [self startReceive];
+}
+/** 开始接收数据的请求，这个方法需要实现设置IP和端口 */
 - (void) startReceive
 {
-    
+    if(m_asyncSocket != nil){
+        NSError *error = nil;
+        BOOL bResult = [m_asyncSocket connectToHost:m_strAdd onPort:m_port withTimeout:10 error:&error];
+        if(bResult != YES){
+            NSLog(@"%@", ShowContentForLog(@"Socket连接失败"));
+            if(error != nil){
+                NSLog(@"%@", error.description);
+            }
+        }
+    }
 }
 
 /** 关闭接收数据 */
 - (void) closeReceive
 {
-    
+    if(m_asyncSocket != nil){
+        if([m_asyncSocket isConnected] == YES){ // 读/写之后关闭连接
+            [m_asyncSocket disconnectAfterReadingAndWriting];
+        }
+    }
 }
+
 // ==============================================================================================
 #pragma mark - 委托协议AsyncSocketDelegate
 - (void)onSocket:(AsyncSocket *)sock willDisconnectWithError:(NSError *)err
@@ -58,10 +81,6 @@
 {
     
 }
-//- (NSRunLoop *)onSocket:(AsyncSocket *)sock wantsRunLoopForNewSocket:(AsyncSocket *)newSocket
-//{
-//
-//}
 - (BOOL)onSocketWillConnect:(AsyncSocket *)sock
 {
     return YES;

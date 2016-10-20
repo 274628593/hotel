@@ -87,7 +87,8 @@
 /** 当接收到新的连接请求时，会调用这个方法  */
 - (void)onSocket:(AsyncSocket *)sock didAcceptNewSocket:(AsyncSocket *)newSocket
 {
-    
+    NSString *str = [NSString stringWithFormat:@"收到请求连接%@", [newSocket description]];
+    NSLog(@"%@", ShowContentForLog(str));
 }
 //- (NSRunLoop *)onSocket:(AsyncSocket *)sock wantsRunLoopForNewSocket:(AsyncSocket *)newSocket
 //{
@@ -97,6 +98,7 @@
 {
     return YES;
 }
+/** 当Soceket已经连接好了之后，用这个方法发送/读取消息 */
 - (void)onSocket:(AsyncSocket *)sock didConnectToHost:(NSString *)host port:(UInt16)port
 {
     
